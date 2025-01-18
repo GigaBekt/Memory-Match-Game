@@ -1,82 +1,55 @@
-import { Card, Difficulty } from '../types';
+import { Card, Difficulty } from "../types";
+import md5 from "md5";
 
-const marvelCharacters = [
-  {
-    name: 'Iron Man',
-    image: 'https://images.pexels.com/photos/12903779/pexels-photo-12903779.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Spider-Man',
-    image: 'https://images.pexels.com/photos/12903775/pexels-photo-12903775.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Captain America',
-    image: 'https://images.pexels.com/photos/5011647/pexels-photo-5011647.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Thor',
-    image: 'https://images.pexels.com/photos/8017959/pexels-photo-8017959.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Black Widow',
-    image: 'https://images.pexels.com/photos/8017932/pexels-photo-8017932.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Doctor Strange',
-    image: 'https://images.pexels.com/photos/8017943/pexels-photo-8017943.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Black Panther',
-    image: 'https://images.pexels.com/photos/8017925/pexels-photo-8017925.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Captain Marvel',
-    image: 'https://images.pexels.com/photos/8017937/pexels-photo-8017937.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Scarlet Witch',
-    image: 'https://images.pexels.com/photos/8017929/pexels-photo-8017929.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Ant-Man',
-    image: 'https://images.pexels.com/photos/8017950/pexels-photo-8017950.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Star-Lord',
-    image: 'https://images.pexels.com/photos/8017947/pexels-photo-8017947.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Vision',
-    image: 'https://images.pexels.com/photos/8017941/pexels-photo-8017941.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Loki',
-    image: 'https://images.pexels.com/photos/8017935/pexels-photo-8017935.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Thanos',
-    image: 'https://images.pexels.com/photos/8017953/pexels-photo-8017953.jpeg?auto=compress&cs=tinysrgb&w=300'
-  },
-  {
-    name: 'Hulk',
-    image: 'https://images.pexels.com/photos/8017956/pexels-photo-8017956.jpeg?auto=compress&cs=tinysrgb&w=300'
-  }
-];
+const publicKey = import.meta.env.VITE_PUBLIC_KEY as string;
+const privateKey = import.meta.env.VITE_PRIVATE_KEY as string;
+const baseUrl = import.meta.env.VITE_BASE_URL as string;
 
-export const getGridSize = (difficulty: Difficulty): { pairs: number } => {
-  switch (difficulty) {
-    case 'easy':
-      return { pairs: 6 };
-    case 'medium':
-      return { pairs: 8 };
-    case 'hard':
-      return { pairs: 15 };
+const ts = new Date().getTime();
+const hash = md5(ts + privateKey + publicKey);
+
+const fetchMarvelCharacters = async () => {
+  const url = `${baseUrl}/characters?ts=${ts}&apikey=${publicKey}&hash=${hash}&limit=30`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const characters: { name: string; image: string }[] = data.data.results.map(
+      (char: {
+        name: string;
+        thumbnail: { path: string; extension: string };
+      }) => ({
+        name: char.name,
+        image: `${char.thumbnail.path}.${char.thumbnail.extension}`,
+      })
+    );
+    return characters.splice(0, 10);
+  } catch (error) {
+    console.error("Error fetching Marvel characters:", error);
+    return [];
   }
 };
 
-export const generateCards = (difficulty: Difficulty): Card[] => {
+export const getGridSize = (difficulty: Difficulty): { pairs: number } => {
+  switch (difficulty) {
+    case "easy":
+      return { pairs: 6 };
+    case "medium":
+      return { pairs: 8 };
+    case "hard":
+      return { pairs: 15 };
+    default:
+      throw new Error("Invalid difficulty level");
+  }
+};
+
+export const generateCards = async (
+  difficulty: Difficulty
+): Promise<Card[]> => {
   const { pairs } = getGridSize(difficulty);
-  const selectedCharacters = marvelCharacters
+  const characters = await fetchMarvelCharacters();
+  const selectedCharacters = characters
     .sort(() => Math.random() - 0.5)
     .slice(0, pairs);
 

@@ -1,5 +1,5 @@
+import { ImageBroken, Shield } from "@phosphor-icons/react";
 import React, { useState, memo, useCallback } from "react";
-import { Shield, ImageOff } from "lucide-react";
 
 interface CardProps {
   image: string;
@@ -62,7 +62,7 @@ const Card: React.FC<CardProps> = memo(
             )}
             {imageError ? (
               <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                <ImageOff className="w-1/3 h-1/3 text-gray-400" />
+                <ImageBroken className="w-1/3 h-1/3 text-gray-400" />
               </div>
             ) : (
               <img

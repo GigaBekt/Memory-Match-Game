@@ -1,6 +1,6 @@
 import React from "react";
 import { Difficulty } from "../types";
-import { Shield } from "lucide-react";
+import { Shield } from "@phosphor-icons/react";
 
 interface StartScreenProps {
   onStart: (difficulty: Difficulty) => void;
@@ -27,12 +27,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
         >
           Medium (4x4)
         </button>
-        {/* <button
-          onClick={() => onStart('hard')}
+        <button
+          onClick={() => onStart("hard")}
           className="px-8 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-lg text-lg font-semibold"
         >
           Hard (5x6)
-        </button> */}
+        </button>
       </div>
     </div>
   );

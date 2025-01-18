@@ -4,10 +4,11 @@ import GameBoard from "./components/GameBoard";
 import StartScreen from "./components/StartScreen";
 import WinScreen from "./components/WinScreen";
 import { generateCards } from "./utils/gameUtils";
-import { ArrowLeft, Timer } from "lucide-react";
+import Loader from "./components/Loader";
+import { ArrowLeft } from "@phosphor-icons/react";
 
 const initialGameState = (difficulty: Difficulty): GameState => ({
-  cards: generateCards(difficulty),
+  cards: [],
   moves: 0,
   startTime: null,
   endTime: null,
@@ -21,49 +22,48 @@ function App() {
   const [gameState, setGameState] = useState<GameState>(
     initialGameState("easy")
   );
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const startGame = useCallback((difficulty: Difficulty) => {
+  const startGame = useCallback(async (difficulty: Difficulty) => {
+    setLoading(true);
+    const cards = await generateCards(difficulty);
     setGameState({
       ...initialGameState(difficulty),
+      cards,
       gameStarted: true,
       startTime: Date.now(),
     });
-    setElapsedTime(0);
+    setLoading(false);
   }, []);
 
-  const handleCardClick = useCallback(
-    (id: number) => {
-      const { cards, firstCard, secondCard, moves } = gameState;
+  const handleCardClick = useCallback((id: number) => {
+    setGameState((prevState) => {
+      const { cards, firstCard, secondCard, moves } = prevState;
 
-      if (secondCard !== null || firstCard === id) return;
+      if (secondCard !== null || firstCard === id) return prevState;
 
       const newCards = cards.map((card) =>
         card.id === id ? { ...card, isFlipped: true } : card
       );
 
       if (firstCard === null) {
-        setGameState({ ...gameState, cards: newCards, firstCard: id });
-        return;
+        return { ...prevState, cards: newCards, firstCard: id };
       }
 
-      setGameState({
-        ...gameState,
+      return {
+        ...prevState,
         cards: newCards,
         secondCard: id,
         moves: moves + 1,
-      });
-    },
-    [gameState]
-  );
+      };
+    });
+  }, []);
 
   useEffect(() => {
     const { cards, firstCard, secondCard } = gameState;
     if (firstCard === null || secondCard === null) return;
-
     const first = cards[firstCard];
     const second = cards[secondCard];
-
     if (first.image === second.image) {
       const newCards = cards.map((card) =>
         card.id === firstCard || card.id === secondCard
@@ -72,15 +72,15 @@ function App() {
       );
 
       const allMatched = newCards.every((card) => card.isMatched);
-      setGameState((prev) => ({
-        ...prev,
+      setGameState((prevState) => ({
+        ...prevState,
         cards: newCards,
         firstCard: null,
         secondCard: null,
         endTime: allMatched ? Date.now() : null,
       }));
     } else {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const newCards = cards.map((card) =>
           card.id === firstCard || card.id === secondCard
             ? { ...card, isFlipped: false }
@@ -93,39 +93,21 @@ function App() {
           secondCard: null,
         }));
       }, 1000);
-    }
-  }, [gameState]);
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout | undefined = undefined;
-    if (gameState.gameStarted && !gameState.endTime) {
-      timer = setInterval(() => {
-        setElapsedTime(Date.now() - gameState.startTime!);
-      }, 1000);
-    } else if (gameState.endTime) {
-      clearInterval(timer);
+      return () => clearTimeout(timeoutId);
     }
-    return () => clearInterval(timer);
-  }, [gameState]);
+  }, [gameState.firstCard, gameState.secondCard]);
 
   const { gameStarted, moves, startTime, endTime, cards, difficulty } =
     gameState;
 
-  const endGame = () => {
+  const endGame = useCallback(() => {
     setGameState(initialGameState(difficulty));
-  };
+  }, [difficulty]);
 
-  const fetchItems = async () => {
-    const data = await fetch(
-      "https://developer.marvel.com/v1/public/characters"
-    );
-    const items = await data.json();
-    console.log(items);
-  };
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  if (loading) {
+    return <Loader />;
+  }
 
   if (!gameStarted) {
     return <StartScreen onStart={startGame} />;
@@ -136,26 +118,18 @@ function App() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-gray-800 rounded-lg shadow-xl p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-8">
-              <div
-                onClick={endGame}
-                className="flex gap-2 items-center cursor-pointer"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <p>Go Back</p>
-              </div>
+            <div
+              onClick={endGame}
+              className="flex items-center space-x-2 text-white"
+            >
+              <ArrowLeft size={24} />
+              <span className="text-lg font-semibold">Back To Home</span>
+            </div>
+            <div className="flex items-center space-x-2">
               <span className="text-lg font-semibold text-white">
                 Moves: {moves}
               </span>
             </div>
-            {startTime && !endTime && (
-              <div className="flex items-center space-x-2 text-white">
-                <Timer className="w-5 h-5" />
-                <span className="text-lg font-semibold">
-                  {Math.floor(elapsedTime / 1000)}s
-                </span>
-              </div>
-            )}
           </div>
           <GameBoard
             cards={cards}
