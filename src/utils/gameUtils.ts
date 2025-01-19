@@ -8,6 +8,19 @@ const baseUrl = import.meta.env.VITE_BASE_URL as string;
 const ts = new Date().getTime();
 const hash = md5(ts + privateKey + publicKey);
 
+interface Thumbnail {
+  path: string;
+  extension: string;
+}
+interface Character {
+  name: string;
+  thumbnail: Thumbnail;
+}
+interface CharacterData {
+  name: string;
+  image: string;
+}
+
 const fetchMarvelCharacters = async () => {
   const url = `${baseUrl}/characters?ts=${ts}&apikey=${publicKey}&hash=${hash}&limit=50`;
 
@@ -15,20 +28,13 @@ const fetchMarvelCharacters = async () => {
     const response = await fetch(url);
     const { data } = await response.json();
 
-    const filteredData = data.results.filter(
-      (char: { thumbnail: { path: string; extension: string } }) =>
-        !char.thumbnail.path.includes("image_not_available")
+    const filteredData: Character[] = data.data.results.filter(
+      (char: Character) => !char.thumbnail.path.includes("image_not_available")
     );
-
-    const characters: { name: string; image: string }[] = filteredData.map(
-      (char: {
-        name: string;
-        thumbnail: { path: string; extension: string };
-      }) => ({
-        name: char.name,
-        image: `${char.thumbnail.path}.${char.thumbnail.extension}`,
-      })
-    );
+    const characters: CharacterData[] = filteredData.map((char: Character) => ({
+      name: char.name,
+      image: `${char.thumbnail.path}.${char.thumbnail.extension}`,
+    }));
 
     return characters;
   } catch (error) {
