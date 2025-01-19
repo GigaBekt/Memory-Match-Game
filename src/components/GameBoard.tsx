@@ -15,7 +15,6 @@ const GameBoard: React.FC<GameBoardProps> = memo(
       medium: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
       hard: "grid-cols-3 sm:grid-cols-4 md:grid-cols-5",
     };
-    console.log(cards, "CARDS");
     return (
       <div
         className={`grid ${

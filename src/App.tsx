@@ -120,7 +120,7 @@ function App() {
           <div className="flex justify-between items-center mb-6">
             <div
               onClick={endGame}
-              className="flex items-center space-x-2 text-white"
+              className="flex items-center space-x-2 text-white cursor-pointer"
             >
               <ArrowLeft size={24} />
               <span className="text-lg font-semibold">Back To Home</span>

@@ -9,13 +9,18 @@ const ts = new Date().getTime();
 const hash = md5(ts + privateKey + publicKey);
 
 const fetchMarvelCharacters = async () => {
-  const url = `${baseUrl}/characters?ts=${ts}&apikey=${publicKey}&hash=${hash}&limit=30`;
+  const url = `${baseUrl}/characters?ts=${ts}&apikey=${publicKey}&hash=${hash}&limit=50`;
 
   try {
     const response = await fetch(url);
-    const data = await response.json();
+    const { data } = await response.json();
 
-    const characters: { name: string; image: string }[] = data.data.results.map(
+    const filteredData = data.results.filter(
+      (char: { thumbnail: { path: string; extension: string } }) =>
+        !char.thumbnail.path.includes("image_not_available")
+    );
+
+    const characters: { name: string; image: string }[] = filteredData.map(
       (char: {
         name: string;
         thumbnail: { path: string; extension: string };
@@ -24,7 +29,8 @@ const fetchMarvelCharacters = async () => {
         image: `${char.thumbnail.path}.${char.thumbnail.extension}`,
       })
     );
-    return characters.splice(0, 10);
+
+    return characters;
   } catch (error) {
     console.error("Error fetching Marvel characters:", error);
     return [];
