@@ -28,7 +28,7 @@ const fetchMarvelCharacters = async () => {
     const response = await fetch(url);
     const { data } = await response.json();
 
-    const filteredData: Character[] = data.data.results.filter(
+    const filteredData: Character[] = data.results.filter(
       (char: Character) => !char.thumbnail.path.includes("image_not_available")
     );
     const characters: CharacterData[] = filteredData.map((char: Character) => ({
